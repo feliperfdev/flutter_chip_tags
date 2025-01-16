@@ -18,6 +18,7 @@ class ChipTags extends StatefulWidget {
     this.chipPosition = ChipPosition.below,
     this.inputController,
     this.onTapOutside,
+    this.enabled = true,
     required this.list,
   }) : super(key: key);
 
@@ -55,6 +56,8 @@ class ChipTags extends StatefulWidget {
 
   final void Function(PointerDownEvent)? onTapOutside;
 
+  final bool enabled;
+
   @override
   _ChipTagsState createState() => _ChipTagsState();
 }
@@ -84,6 +87,7 @@ class _ChipTagsState extends State<ChipTags>
         Form(
           key: _formKey,
           child: TextField(
+            enabled: widget.enabled,
             onTapOutside: widget.onTapOutside,
             controller: _inputController,
             decoration: widget.decoration ??
