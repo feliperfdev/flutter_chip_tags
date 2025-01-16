@@ -13,10 +13,11 @@ class ChipTags extends StatefulWidget {
     this.textColor,
     this.decoration,
     this.keyboardType,
-    this.separator,
+    this.separators,
     this.createTagOnSubmit = false,
     this.chipPosition = ChipPosition.below,
     this.inputController,
+    this.onTapOutside,
     required this.list,
   }) : super(key: key);
 
@@ -32,12 +33,12 @@ class ChipTags extends StatefulWidget {
   ///container decoration
   final InputDecoration? decoration;
 
-  ///set keyboradType
+  ///set keyboardType
   final TextInputType? keyboardType;
 
-  ///customer symbol to seprate tags by default
+  ///customer symbol to separate tags by default
   ///it is " " space.
-  final String? separator;
+  final List<String>? separators;
 
   //sets a custom TextEditingController
   final TextEditingController? inputController;
@@ -47,10 +48,12 @@ class ChipTags extends StatefulWidget {
 
   final ChipPosition chipPosition;
 
-  /// Default `createTagOnSumit = false`
+  /// Default `createTagOnSubmit = false`
   /// Creates new tag if user submit.
-  /// If true they separtor will be ignored.
+  /// If true they separator will be ignored.
   final bool createTagOnSubmit;
+
+  final void Function(PointerDownEvent)? onTapOutside;
 
   @override
   _ChipTagsState createState() => _ChipTagsState();
@@ -81,15 +84,14 @@ class _ChipTagsState extends State<ChipTags>
         Form(
           key: _formKey,
           child: TextField(
+            onTapOutside: widget.onTapOutside,
             controller: _inputController,
             decoration: widget.decoration ??
                 InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  hintText: widget.createTagOnSubmit
-                      ? "Submit text to create Tags"
-                      : "Separate Tags with '${widget.separator ?? 'space'}'",
+                  hintText: widget.decoration?.hintText,
                 ),
             keyboardType: widget.keyboardType ?? TextInputType.text,
             textInputAction: TextInputAction.done,
@@ -104,7 +106,7 @@ class _ChipTagsState extends State<ChipTags>
                     ///resetting form
                     _formKey.currentState!.reset();
 
-                    ///refersing the state to show new data
+                    ///refreshing the state to show new data
                     setState(() {});
                     _focusNode.requestFocus();
                   }
@@ -114,13 +116,18 @@ class _ChipTagsState extends State<ChipTags>
                 : (value) {
                     ///check if user has send separator so that it can break the line
                     ///and add that word to list
-                    if (value.endsWith(widget.separator ?? " ")) {
+                    if (widget.separators?.any((sep) => value.endsWith(sep)) ??
+                        false) {
                       ///check for ' ' and duplicate tags
-                      if (value != widget.separator &&
+                      if (!widget.separators!.any((sep) => value == sep) &&
                           !widget.list.contains(value.trim())) {
-                        widget.list.add(value
-                            .replaceFirst(widget.separator ?? " ", '')
-                            .trim());
+                        final detectedSep = value.split('').firstWhere(
+                              (c) => widget.separators!.any((sep) => sep == c),
+                              orElse: () => ' ',
+                            );
+
+                        widget.list
+                            .add(value.replaceFirst(detectedSep, '').trim());
                       }
 
                       ///setting the controller to empty
@@ -129,7 +136,7 @@ class _ChipTagsState extends State<ChipTags>
                       ///resetting form
                       _formKey.currentState!.reset();
 
-                      ///refersing the state to show new data
+                      ///refreshing the state to show new data
                       setState(() {});
                     }
                   },
@@ -144,7 +151,7 @@ class _ChipTagsState extends State<ChipTags>
 
   Visibility _chipListPreview() {
     return Visibility(
-      //if length is 0 it will not occupie any space
+      //if length is 0 it will not fill any space
       visible: widget.list.length > 0,
       child: Wrap(
         ///creating a list
