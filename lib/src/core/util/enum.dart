@@ -1,1 +1,4 @@
-enum ChipPosition { above, below }
+enum ChipPosition {
+  above,
+  below,
+}

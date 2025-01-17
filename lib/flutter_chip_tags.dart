@@ -18,7 +18,8 @@ class ChipTags extends StatefulWidget {
     this.chipPosition = ChipPosition.below,
     this.inputController,
     this.onTapOutside,
-    this.enabled = true,
+    this.ignoreInput = false,
+    this.ignoreChips = false,
     required this.list,
   }) : super(key: key);
 
@@ -56,13 +57,15 @@ class ChipTags extends StatefulWidget {
 
   final void Function(PointerDownEvent)? onTapOutside;
 
-  final bool enabled;
+  final bool ignoreInput;
+  final bool ignoreChips;
 
   @override
   _ChipTagsState createState() => _ChipTagsState();
 }
 
-class _ChipTagsState extends State<ChipTags> {
+class _ChipTagsState extends State<ChipTags>
+    with SingleTickerProviderStateMixin {
   FocusNode _focusNode = FocusNode();
 
   ///Form key for TextField
@@ -79,61 +82,29 @@ class _ChipTagsState extends State<ChipTags> {
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.max,
-      children: <Widget>[
-        Visibility(
-            visible: widget.chipPosition == ChipPosition.above,
-            child: _chipListPreview()),
-        Form(
-          key: _formKey,
-          child: TextField(
-            enabled: widget.enabled,
-            onTapOutside: widget.onTapOutside,
-            controller: _inputController,
-            decoration: widget.decoration ??
-                InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+      children: [
+        if (widget.chipPosition == ChipPosition.above)
+          _chipListPreview(widget.ignoreChips),
+        IgnorePointer(
+          ignoring: widget.ignoreInput,
+          child: Form(
+            key: _formKey,
+            child: TextField(
+              onTapOutside: widget.onTapOutside,
+              controller: _inputController,
+              decoration: widget.decoration ??
+                  InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    hintText: widget.decoration?.hintText,
                   ),
-                  hintText: widget.decoration?.hintText,
-                ),
-            keyboardType: widget.keyboardType ?? TextInputType.text,
-            textInputAction: TextInputAction.done,
-            focusNode: _focusNode,
-            onSubmitted: widget.createTagOnSubmit
-                ? (value) {
-                    widget.list.add(value);
-
-                    ///setting the controller to empty
-                    _inputController.clear();
-
-                    ///resetting form
-                    _formKey.currentState!
-                      ..reset()
-                      ..save();
-
-                    ///refreshing the state to show new data
-                    setState(() {});
-                    _focusNode.requestFocus();
-                  }
-                : null,
-            onChanged: widget.createTagOnSubmit
-                ? null
-                : (value) {
-                    ///check if user has send separator so that it can break the line
-                    ///and add that word to list
-                    if (widget.separators?.any((sep) => value.endsWith(sep)) ??
-                        false) {
-                      ///check for ' ' and duplicate tags
-                      if (!widget.separators!.any((sep) => value == sep) &&
-                          !widget.list.contains(value.trim())) {
-                        final detectedSep = value.split('').firstWhere(
-                              (c) => widget.separators!.any((sep) => sep == c),
-                              orElse: () => ' ',
-                            );
-
-                        widget.list
-                            .add(value.replaceFirst(detectedSep, '').trim());
-                      }
+              keyboardType: widget.keyboardType ?? TextInputType.text,
+              textInputAction: TextInputAction.done,
+              focusNode: _focusNode,
+              onSubmitted: widget.createTagOnSubmit
+                  ? (value) {
+                      widget.list.add(value);
 
                       ///setting the controller to empty
                       _inputController.clear();
@@ -145,27 +116,62 @@ class _ChipTagsState extends State<ChipTags> {
 
                       ///refreshing the state to show new data
                       setState(() {});
+                      _focusNode.requestFocus();
                     }
-                  },
+                  : null,
+              onChanged: widget.createTagOnSubmit
+                  ? null
+                  : (value) {
+                      ///check if user has send separator so that it can break the line
+                      ///and add that word to list
+                      if (widget.separators
+                              ?.any((sep) => value.endsWith(sep)) ??
+                          false) {
+                        ///check for ' ' and duplicate tags
+                        if (!widget.separators!.any((sep) => value == sep) &&
+                            !widget.list.contains(value.trim())) {
+                          final detectedSep = value.split('').firstWhere(
+                                (c) =>
+                                    widget.separators!.any((sep) => sep == c),
+                                orElse: () => ' ',
+                              );
+
+                          widget.list
+                              .add(value.replaceFirst(detectedSep, '').trim());
+                        }
+
+                        ///setting the controller to empty
+                        _inputController.clear();
+
+                        ///resetting form
+                        _formKey.currentState!
+                          ..reset()
+                          ..save();
+
+                        ///refreshing the state to show new data
+                        setState(() {});
+                      }
+                    },
+            ),
           ),
         ),
-        Visibility(
-            visible: widget.chipPosition == ChipPosition.below,
-            child: _chipListPreview()),
+        if (widget.chipPosition == ChipPosition.below)
+          _chipListPreview(widget.ignoreChips),
       ],
     );
   }
 
-  Visibility _chipListPreview() {
-    return Visibility(
-      //if length is 0 it will not fill any space
-      visible: widget.list.length > 0,
+  Widget _chipListPreview(bool ignoreChips) {
+    if (widget.list.isEmpty) return const SizedBox.shrink();
+
+    return IgnorePointer(
+      ignoring: ignoreChips,
       child: Wrap(
-        ///creating a list
-        children: widget.list.map((text) {
-          return Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: FilterChip(
+        children: widget.list
+            .map(
+              (text) => Padding(
+                padding: const EdgeInsets.all(5),
+                child: FilterChip(
                   backgroundColor: widget.chipColor ?? Colors.blue,
                   label: Text(
                     text,
@@ -176,8 +182,11 @@ class _ChipTagsState extends State<ChipTags> {
                   onSelected: (value) {
                     widget.list.remove(text);
                     setState(() {});
-                  }));
-        }).toList(),
+                  },
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
