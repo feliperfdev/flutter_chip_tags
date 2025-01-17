@@ -21,6 +21,8 @@ class ChipTags extends StatefulWidget {
     this.ignoreInput = false,
     this.ignoreChips = false,
     this.validator,
+    this.onRemoveIconTap,
+    this.onSeparatorApplied,
     required this.list,
   }) : super(key: key);
 
@@ -61,6 +63,8 @@ class ChipTags extends StatefulWidget {
   final bool ignoreInput;
   final bool ignoreChips;
   final String? Function(String?)? validator;
+  final Function(String)? onSeparatorApplied;
+  final Function(String)? onRemoveIconTap;
 
   @override
   _ChipTagsState createState() => _ChipTagsState();
@@ -139,8 +143,9 @@ class _ChipTagsState extends State<ChipTags>
                                 orElse: () => ' ',
                               );
 
-                          widget.list
-                              .add(value.replaceFirst(detectedSep, '').trim());
+                          widget.onSeparatorApplied?.call(
+                            value.replaceFirst(detectedSep, '').trim(),
+                          );
                         }
 
                         ///setting the controller to empty
@@ -183,7 +188,7 @@ class _ChipTagsState extends State<ChipTags>
                   avatar: Icon(Icons.remove_circle_outline,
                       color: widget.iconColor ?? Colors.white),
                   onSelected: (value) {
-                    widget.list.remove(text);
+                    widget.onRemoveIconTap?.call(text);
                     setState(() {});
                   },
                 ),
