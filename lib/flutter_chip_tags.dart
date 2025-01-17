@@ -20,6 +20,7 @@ class ChipTags extends StatefulWidget {
     this.onTapOutside,
     this.ignoreInput = false,
     this.ignoreChips = false,
+    this.validator,
     required this.list,
   }) : super(key: key);
 
@@ -59,6 +60,7 @@ class ChipTags extends StatefulWidget {
 
   final bool ignoreInput;
   final bool ignoreChips;
+  final String? Function(String?)? validator;
 
   @override
   _ChipTagsState createState() => _ChipTagsState();
@@ -89,9 +91,10 @@ class _ChipTagsState extends State<ChipTags>
           ignoring: widget.ignoreInput,
           child: Form(
             key: _formKey,
-            child: TextField(
+            child: TextFormField(
               onTapOutside: widget.onTapOutside,
               controller: _inputController,
+              validator: widget.validator,
               decoration: widget.decoration ??
                   InputDecoration(
                     border: OutlineInputBorder(
@@ -102,7 +105,7 @@ class _ChipTagsState extends State<ChipTags>
               keyboardType: widget.keyboardType ?? TextInputType.text,
               textInputAction: TextInputAction.done,
               focusNode: _focusNode,
-              onSubmitted: widget.createTagOnSubmit
+              onFieldSubmitted: widget.createTagOnSubmit
                   ? (value) {
                       widget.list.add(value);
 
