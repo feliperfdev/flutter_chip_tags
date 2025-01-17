@@ -62,8 +62,7 @@ class ChipTags extends StatefulWidget {
   _ChipTagsState createState() => _ChipTagsState();
 }
 
-class _ChipTagsState extends State<ChipTags>
-    with SingleTickerProviderStateMixin {
+class _ChipTagsState extends State<ChipTags> {
   FocusNode _focusNode = FocusNode();
 
   ///Form key for TextField
@@ -108,7 +107,9 @@ class _ChipTagsState extends State<ChipTags>
                     _inputController.clear();
 
                     ///resetting form
-                    _formKey.currentState!.reset();
+                    _formKey.currentState!
+                      ..reset()
+                      ..save();
 
                     ///refreshing the state to show new data
                     setState(() {});
@@ -138,7 +139,9 @@ class _ChipTagsState extends State<ChipTags>
                       _inputController.clear();
 
                       ///resetting form
-                      _formKey.currentState!.reset();
+                      _formKey.currentState!
+                        ..reset()
+                        ..save();
 
                       ///refreshing the state to show new data
                       setState(() {});
